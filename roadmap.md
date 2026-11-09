@@ -1,4 +1,7 @@
 # Portfolio updates
+- [ ] Recreate the uploaded LeetCode activity and stats view using live account data, including current badges.
+- [ ] Show verified GitHub achievements and animated GitHub, Instagram, X, and LinkedIn footer previews.
+- [ ] Verify activity calculations, live data rendering, and footer interactions.
 - [ ] Add colorful technology marks and certificate flip interactions.
 - [ ] Add separate portfolio pages with working navigation.
 - [ ] Find and display verified Medium writing and X posts.

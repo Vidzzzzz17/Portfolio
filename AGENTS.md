@@ -15,3 +15,4 @@
 - Use bundled SVG icon components or imported brand assets for stack marks; non-brand concepts remain text-only rather than receiving invented logos.
 - Portfolio leaf routes render a shared browser-safe portfolio view and navigation, with route-specific metadata and shared activity query caching; this keeps pages consistent without duplicating sections.
 - Keep certificate flip interactions in a reusable component and brand color roles in global tokens so motion and color remain centrally controlled.
+- Keep live activity calculations in pure tested helpers and social preview motion in a reusable browser-safe component, so provider data and interactions stay consistent.
