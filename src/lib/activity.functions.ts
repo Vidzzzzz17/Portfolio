@@ -67,7 +67,10 @@ async function leetcode() {
       userProfileUserQuestionProgressV2?: { totalQuestionBeatsPercentage?: number | null } | null;
       matchedUser?: {
         profile: { ranking: number };
-        submitStatsGlobal: { acSubmissionNum: { difficulty: string; count: number }[] };
+        submitStatsGlobal: {
+          acSubmissionNum: { difficulty: string; count: number; submissions: number }[];
+          totalSubmissionNum: { difficulty: string; count: number; submissions: number }[];
+        };
         userCalendar: { totalActiveDays: number; streak: number; submissionCalendar: string };
           badges: { displayName: string; icon: string; creationDate?: string }[];
       } | null;
@@ -115,7 +118,7 @@ async function leetcode() {
     badges: u.badges.map((badge) => ({
       name: badge.displayName,
       icon: badge.icon.startsWith("http") ? badge.icon : `https://leetcode.com${badge.icon}`,
-      date: badge.creationDate,
+      ...(badge.creationDate ? { date: badge.creationDate } : {}),
     })),
   };
 }

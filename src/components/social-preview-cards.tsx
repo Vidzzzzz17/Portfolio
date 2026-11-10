@@ -10,8 +10,8 @@ type SocialCardProps = {
   href: string;
   handle: string;
   Icon: IconType;
-  githubTotal?: number;
-  githubDays?: Day[];
+  githubTotal?: number | undefined;
+  githubDays?: Day[] | undefined;
 };
 
 const socialProfiles: Omit<SocialCardProps, "githubTotal" | "githubDays">[] = [
@@ -110,7 +110,7 @@ function PreviewCard({ label, href, handle, Icon, githubTotal, githubDays }: Soc
   );
 }
 
-export function SocialPreviewCards({ githubTotal, githubDays }: { githubTotal?: number; githubDays?: Day[] }) {
+export function SocialPreviewCards({ githubTotal, githubDays }: { githubTotal?: number | undefined; githubDays?: Day[] | undefined }) {
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       {socialProfiles.map((profile) => (
