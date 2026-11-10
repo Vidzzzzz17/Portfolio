@@ -255,3 +255,16 @@
   .writing-medium, .writing-arrow { transition: none; }
   html { scroll-behavior: auto; }
 }
+
+.leetcode-bar { background-color: var(--heat-3); border-radius: 3px 3px 0 0; transition: height 180ms ease; }
+.social-preview { z-index: 0; }
+.social-preview:hover, .social-preview:focus-within { z-index: 20; }
+.social-preview-icon { color: var(--foreground); }
+.social-preview[data-network="GitHub"] .social-preview-icon { color: var(--foreground); }
+.social-preview[data-network="Instagram"] .social-preview-icon { color: oklch(0.62 0.22 15); }
+.social-preview[data-network="X"] .social-preview-icon { color: oklch(0.2 0 0); }
+.social-preview[data-network="LinkedIn"] .social-preview-icon { color: oklch(0.52 0.18 245); }
+.social-preview-popover { transform-style: preserve-3d; transform-origin: center bottom; }
+@media (prefers-reduced-motion: reduce) {
+  .leetcode-bar { transition: none; }
+}

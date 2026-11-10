@@ -10,6 +10,7 @@ export type Activity = {
     solved: Record<string, number>;
     questionCounts: Record<string, number>;
     acceptanceRate: number;
+    beatsPercentage: number | null;
     activeDays: number;
     streak: number;
     submissions: number;

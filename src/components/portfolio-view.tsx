@@ -17,9 +17,6 @@ import { getMonthlyTotals } from "@/lib/activity-utils";
 import { SocialPreviewCards } from "@/components/social-preview-cards";
 const avatar = { url: "/profile-portrait.webp" };
 const banner = { url: "/stay-curious-banner.webp" };
-import b1 from "@/assets/b1.png.asset.json";
-import b2 from "@/assets/b2.png.asset.json";
-import b3 from "@/assets/b3.png.asset.json";
 
 export const activityQuery = queryOptions({
   queryKey: ["activity"],
@@ -372,6 +369,15 @@ function PortfolioContent({ page, sent, setSent }: { page: PortfolioPage; sent: 
               <Ext href={S.github} className="font-mono text-muted-foreground hover:text-foreground">GitHub @Vidzzzzz17 ↗</Ext>
             </div>
             {gh && <div className="rounded-xl border border-border bg-card p-5"><Heatmap days={gh.days} /></div>}
+            {gh && gh.badges.length > 0 && <div className="mt-4 rounded-xl border border-border bg-card p-5">
+              <div className="flex items-baseline justify-between gap-3"><h3 className="font-mono text-lg">GitHub achievements</h3><span className="font-mono text-sm text-muted-foreground">{gh.badges.length} earned</span></div>
+              <div className="mt-4 flex flex-wrap gap-4">
+                {gh.badges.map((badge) => <Ext key={badge.name} href={S.github} className="flex min-w-24 flex-col items-center gap-2 text-center">
+                  <img src={badge.icon} alt="" loading="lazy" className="size-16 object-contain" />
+                  <span className="max-w-28 text-xs text-muted-foreground">{badge.name}</span>
+                </Ext>)}
+              </div>
+            </div>}
           </div>
 
           <div>
