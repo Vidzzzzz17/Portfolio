@@ -207,6 +207,9 @@
   --brand-n8n: oklch(0.63 0.21 10); --brand-posthog: oklch(0.62 0.2 35);
   --brand-figma: oklch(0.63 0.22 25); --brand-paper: oklch(0.55 0.2 280);
   --brand-photoshop: oklch(0.6 0.18 250);
+  --brand-instagram: oklch(0.62 0.22 15);
+  --brand-x: oklch(0.2 0 0);
+  --brand-linkedin: oklch(0.52 0.18 245);
 }
 .tech-brand { color: var(--foreground); }
 .tech-brand[data-brand="TypeScript"] { color: var(--brand-typescript); }
@@ -254,4 +257,17 @@
   .certificate-marquee { overflow-x: auto; }
   .writing-medium, .writing-arrow { transition: none; }
   html { scroll-behavior: auto; }
+}
+
+.leetcode-bar { background-color: var(--heat-3); border-radius: 3px 3px 0 0; transition: height 180ms ease; }
+.social-preview { z-index: 0; }
+.social-preview:hover, .social-preview:focus-within { z-index: 20; }
+.social-preview-icon { color: var(--foreground); }
+.social-preview[data-network="GitHub"] .social-preview-icon { color: var(--foreground); }
+.social-preview[data-network="Instagram"] .social-preview-icon { color: var(--brand-instagram); }
+.social-preview[data-network="X"] .social-preview-icon { color: var(--brand-x); }
+.social-preview[data-network="LinkedIn"] .social-preview-icon { color: var(--brand-linkedin); }
+.social-preview-popover { transform-style: preserve-3d; transform-origin: center bottom; }
+@media (prefers-reduced-motion: reduce) {
+  .leetcode-bar { transition: none; }
 }

@@ -13,11 +13,10 @@ import { TechLogo } from "@/components/tech-logo";
 import { CertificateCard } from "@/components/certificate-card";
 import { Button } from "@/components/ui/button";
 import { getActivity, type Day } from "@/lib/activity.functions";
+import { getMonthlyTotals } from "@/lib/activity-utils";
+import { SocialPreviewCards } from "@/components/social-preview-cards";
 const avatar = { url: "/profile-portrait.webp" };
 const banner = { url: "/stay-curious-banner.webp" };
-import b1 from "@/assets/b1.png.asset.json";
-import b2 from "@/assets/b2.png.asset.json";
-import b3 from "@/assets/b3.png.asset.json";
 
 export const activityQuery = queryOptions({
   queryKey: ["activity"],
@@ -74,7 +73,7 @@ const nav = [{ label: "Home", to: "/" }, { label: "Projects", to: "/projects" },
 const heat = ["bg-heat-0", "bg-heat-1", "bg-heat-2", "bg-heat-3", "bg-heat-4"];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-function Heatmap({ days }: { days: Day[] }) {
+function Heatmap({ days, activityLabel = "contributions" }: { days: Day[]; activityLabel?: string }) {
   const byDate = new Map(days.map((day) => [day.date, day]));
   const first = days[0] ? new Date(`${days[0].date}T00:00:00Z`) : null;
   const last = days.at(-1) ? new Date(`${days.at(-1)!.date}T00:00:00Z`) : null;
@@ -116,7 +115,7 @@ function Heatmap({ days }: { days: Day[] }) {
                 <span className="w-[12px] overflow-visible whitespace-nowrap font-mono text-[11px] text-muted-foreground">{labels[i]}</span>
                 {week.map((day, dayIndex) => (
                   day ? (
-                    <div key={day.date} title={`${day.count} contributions on ${day.date}`} aria-label={`${day.count} contributions on ${day.date}`} className={`size-[12px] rounded-[2px] ${heat[Math.min(4, day.level)]}`} />
+                    <div key={day.date} title={`${day.count} ${activityLabel} on ${day.date}`} aria-label={`${day.count} ${activityLabel} on ${day.date}`} className={`size-[12px] rounded-[2px] ${heat[Math.min(4, day.level)]}`} />
                   ) : (
                     <span key={`empty-${dayIndex}`} aria-hidden="true" className="size-[12px]" />
                   )
@@ -132,6 +131,43 @@ function Heatmap({ days }: { days: Day[] }) {
     </div>
   );
 }
+
+function SubmissionBars({ days }: { days: Day[] }) {
+  const months = getMonthlyTotals(days);
+  const [selectedMonth, setSelectedMonth] = useState(months.at(-1)?.month ?? "");
+  const currentMonth = months.find(({ month }) => month === selectedMonth) ?? months.at(-1);
+  const monthDays = currentMonth ? days.filter((day) => day.date.startsWith(currentMonth.month)) : [];
+  const maxCount = Math.max(1, ...monthDays.map((day) => day.count));
+  return (
+    <div className="rounded-xl border border-border bg-card p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="inline-flex border border-border bg-secondary p-1" aria-label="Activity type">
+          <span className="bg-card px-3 py-1.5 text-sm font-medium">Submissions</span>
+        </div>
+        <label className="flex items-center gap-2 font-mono text-sm text-muted-foreground">
+          Month
+          <select aria-label="Activity month" value={currentMonth?.month ?? ""} onChange={(event) => setSelectedMonth(event.target.value)} className="h-9 border border-input bg-card px-2 text-foreground outline-none focus:ring-2 focus:ring-ring">
+            {months.map(({ month, label }) => <option key={month} value={month}>{month.slice(0, 4)} · {label}</option>)}
+          </select>
+        </label>
+      </div>
+      <div className="mt-5 flex h-36 items-end gap-1 border-b border-border px-1" role="img" aria-label={`${currentMonth?.label ?? "Monthly"} daily LeetCode submissions`}>
+        {monthDays.map((day) => (
+          <div key={day.date} className="flex h-full min-w-0 flex-1 flex-col justify-end" title={`${day.count} submissions · ${day.date}`}>
+            <span className="sr-only">{day.date}: {day.count} submissions</span>
+            <div className="leetcode-bar min-h-0.5 w-full" style={{ height: `${Math.max(2, (day.count / maxCount) * 100)}%` }} />
+          </div>
+        ))}
+      </div>
+      <div className="mt-3 flex items-center justify-between gap-2 text-sm text-muted-foreground">
+        <span>{currentMonth?.month ?? ""}-01</span>
+        <span className="font-mono">{currentMonth?.count ?? 0} submissions in {currentMonth?.label ?? ""}</span>
+        <span>{monthDays.at(-1)?.date.slice(-2) ?? ""}</span>
+      </div>
+    </div>
+  );
+}
+
 function Ring({ easy, med, hard, solved, total, easyTotal, medTotal, hardTotal }: { easy: number; med: number; hard: number; solved: number; total: number; easyTotal: number; medTotal: number; hardTotal: number }) {
   const r = 62, c = 2 * Math.PI * r, span = 0.75, gap = 0.025;
   const parts = [
@@ -333,6 +369,15 @@ function PortfolioContent({ page, sent, setSent }: { page: PortfolioPage; sent: 
               <Ext href={S.github} className="font-mono text-muted-foreground hover:text-foreground">GitHub @Vidzzzzz17 ↗</Ext>
             </div>
             {gh && <div className="rounded-xl border border-border bg-card p-5"><Heatmap days={gh.days} /></div>}
+            {gh && gh.badges.length > 0 && <div className="mt-4 rounded-xl border border-border bg-card p-5">
+              <div className="flex items-baseline justify-between gap-3"><h3 className="font-mono text-lg">GitHub achievements</h3><span className="font-mono text-sm text-muted-foreground">{gh.badges.length} earned</span></div>
+              <div className="mt-4 flex flex-wrap gap-4">
+                {gh.badges.map((badge) => <Ext key={badge.name} href={S.github} className="flex min-w-24 flex-col items-center gap-2 text-center">
+                  <img src={badge.icon} alt="" loading="lazy" className="size-16 object-contain" />
+                  <span className="max-w-28 text-xs text-muted-foreground">{badge.name}</span>
+                </Ext>)}
+              </div>
+            </div>}
           </div>
 
           <div>
@@ -353,15 +398,21 @@ function PortfolioContent({ page, sent, setSent }: { page: PortfolioPage; sent: 
                 </div>
               </div>
               <div className="rounded-xl border border-border bg-card p-6">
-                <p className="text-muted-foreground">Badges</p>
-                <p className="text-3xl font-medium">3</p>
-                <div className="my-6 flex items-center justify-around">
-                  <img src={b1.url} alt="9 September badge" className="h-[70px]" />
-                  <img src={b3.url} alt="50 Days Badge 2026" className="h-[100px]" />
-                  <img src={b2.url} alt="8 August badge" className="h-[70px]" />
+                <div className="flex items-baseline justify-between gap-3">
+                  <p className="text-muted-foreground">LeetCode badges</p>
+                  <p className="font-mono text-sm text-muted-foreground">{lc ? `${lc.badges.length} earned` : "Unavailable"}</p>
                 </div>
-                <p className="font-mono text-sm text-muted-foreground">Most recent badge</p>
-                <p className="text-xl">50 Days Badge 2026</p>
+                <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  {(lc?.badges ?? []).map((badge) => (
+                    <Ext key={`${badge.name}-${badge.date ?? ""}`} href={S.leetcode} className="group flex min-w-0 flex-col items-center gap-2 border border-border p-3 text-center transition-colors hover:bg-secondary">
+                      <img src={badge.icon} alt="" loading="lazy" className="size-16 object-contain" />
+                      <span className="line-clamp-2 text-xs text-muted-foreground group-hover:text-foreground">{badge.name}</span>
+                    </Ext>
+                  ))}
+                  {lc && lc.badges.length === 0 && <p className="col-span-2 text-sm text-muted-foreground">No earned badges were returned by LeetCode.</p>}
+                  {!lc && <p className="col-span-2 text-sm text-muted-foreground">Badge details are unavailable right now.</p>}
+                </div>
+                {lc?.beatsPercentage !== null && lc?.beatsPercentage !== undefined && <p className="mt-4 font-mono text-sm text-muted-foreground">Beats {lc.beatsPercentage}% of users</p>}
               </div>
             </div>
             <div className="mt-5 rounded-xl border border-border bg-card p-5">
@@ -369,8 +420,26 @@ function PortfolioContent({ page, sent, setSent }: { page: PortfolioPage; sent: 
                 <span className="text-xl font-medium">{lc ? `${lc.submissions} submissions in the past one year` : "LeetCode activity unavailable right now"}</span>
                 {lc && <span className="font-mono text-muted-foreground">Total active days: {lc.activeDays} · Max streak: {lc.streak}</span>}
               </div>
-              {lc && <Heatmap days={lc.days} />}
+              {lc && <Heatmap days={lc.days} activityLabel="submissions" />}
             </div>
+            {lc && <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_1.4fr]">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+                <div className="rounded-xl border border-border bg-card p-5">
+                  <p className="font-mono text-sm text-muted-foreground">Total solved</p>
+                  <p className="mt-2 text-3xl font-medium">{(solved["All"] ?? 0).toLocaleString()} <span className="text-base text-muted-foreground">problems</span></p>
+                  <div className="mt-4 grid grid-cols-3 gap-2">
+                    {[["Easy", solved["Easy"] ?? 0, "text-easy"], ["Med.", solved["Medium"] ?? 0, "text-medium"], ["Hard", solved["Hard"] ?? 0, "text-hard"]].map(([label, count, color]) => (
+                      <div key={label as string} className="rounded-lg bg-secondary px-2 py-2 text-center"><p className={`text-sm ${color}`}>{label}</p><p>{count}</p></div>
+                    ))}
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-xl border border-border bg-card p-5"><p className="text-sm text-muted-foreground">Acceptance</p><p className="mt-2 text-3xl font-medium text-accent">{lc.acceptanceRate}<span className="text-lg">%</span></p></div>
+                  <div className="rounded-xl border border-border bg-card p-5"><p className="text-sm text-muted-foreground">Submissions</p><p className="mt-2 text-3xl font-medium">{lc.submissions}</p></div>
+                </div>
+              </div>
+              <div className="space-y-2"><div className="flex flex-wrap items-baseline justify-between gap-2"><h3 className="font-mono text-lg">Daily activity</h3><span className="font-mono text-sm text-muted-foreground">Live submission counts · monthly view</span></div><SubmissionBars days={lc.days} /></div>
+            </div>}
           </div>
         </div>
       </Section>
@@ -481,6 +550,7 @@ function PortfolioContent({ page, sent, setSent }: { page: PortfolioPage; sent: 
               <p className="mt-4 text-2xl font-medium">Vidit Sharma</p>
               <p className="mt-3 max-w-sm text-lg leading-relaxed text-muted-foreground">Student &amp; founder in India. I build thoughtful digital products that make complicated ideas feel clear and useful.</p>
               <div className="mt-6"><SocialIcons wrap /></div>
+            <div className="mt-8"><p className="mb-4 font-mono text-xs uppercase tracking-[0.1em] text-muted-foreground">Find me elsewhere</p><SocialPreviewCards githubTotal={gh?.total} githubDays={gh?.days} /></div>
             </div>
             {[
               ["Navigate", nav.map(({label, to}) => [label, to])],

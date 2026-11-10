@@ -10,8 +10,8 @@ type SocialCardProps = {
   href: string;
   handle: string;
   Icon: IconType;
-  githubTotal?: number;
-  githubDays?: Day[];
+  githubTotal?: number | undefined;
+  githubDays?: Day[] | undefined;
 };
 
 const socialProfiles: Omit<SocialCardProps, "githubTotal" | "githubDays">[] = [
@@ -20,6 +20,7 @@ const socialProfiles: Omit<SocialCardProps, "githubTotal" | "githubDays">[] = [
   { label: "X", href: "https://x.com/vidit1727", handle: "@vidit1727", Icon: SiX },
   { label: "LinkedIn", href: "https://www.linkedin.com/in/vidit-sharma-914202380/", handle: "Vidit Sharma", Icon: FaLinkedinIn },
 ];
+const contributionShades = ["bg-heat-0", "bg-heat-1", "bg-heat-2", "bg-heat-3", "bg-heat-4"];
 
 function PreviewCard({ label, href, handle, Icon, githubTotal, githubDays }: SocialCardProps) {
   const [open, setOpen] = useState(false);
@@ -95,7 +96,7 @@ function PreviewCard({ label, href, handle, Icon, githubTotal, githubDays }: Soc
           <div className="mt-4">
             <p className="text-sm text-muted-foreground">{githubTotal.toLocaleString()} contributions in the last year</p>
             <div className="mt-3 grid grid-flow-col grid-rows-7 gap-1" aria-label="Recent GitHub contributions">
-              {githubDays.slice(-70).map((day) => <span key={day.date} title={`${day.count} contributions on ${day.date}`} className={`size-2 rounded-[2px] bg-heat-${Math.min(4, day.level)}`} />)}
+              {githubDays.slice(-70).map((day) => <span key={day.date} title={`${day.count} contributions on ${day.date}`} className={`size-2 rounded-[2px] ${contributionShades[Math.min(4, day.level)] ?? contributionShades[0]}`} />)}
             </div>
           </div>
         ) : (
@@ -109,7 +110,7 @@ function PreviewCard({ label, href, handle, Icon, githubTotal, githubDays }: Soc
   );
 }
 
-export function SocialPreviewCards({ githubTotal, githubDays }: { githubTotal?: number; githubDays?: Day[] }) {
+export function SocialPreviewCards({ githubTotal, githubDays }: { githubTotal?: number | undefined; githubDays?: Day[] | undefined }) {
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       {socialProfiles.map((profile) => (
