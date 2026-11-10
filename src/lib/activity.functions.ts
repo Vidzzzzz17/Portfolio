@@ -34,10 +34,11 @@ async function github() {
   const badges: Achievement[] = [];
   if (profileResponse.ok) {
     const html = await profileResponse.text();
-    const badgePattern = /<img\b[^>]*?alt="Achievement: ([^"]+)"[^>]*?src="([^"]+)"/g;
+    const badgePattern = /<img\b[^>]*>/g;
     for (const match of html.matchAll(badgePattern)) {
-      const name = match[1];
-      const icon = match[2];
+      const tag = match[0];
+      const name = tag.match(/\balt="Achievement: ([^"]+)"/)?.[1];
+      const icon = tag.match(/\bsrc="([^"]+)"/)?.[1];
       if (name && icon && !badges.some((badge) => badge.name === name)) {
         badges.push({ name, icon: icon.startsWith("http") ? icon : `https://github.com${icon}` });
       }
@@ -55,13 +56,14 @@ async function leetcode() {
       "User-Agent": "Mozilla/5.0 (compatible; ViditPortfolio/1.0)",
     },
     body: JSON.stringify({
-      query: `{allQuestionsCount{difficulty count} matchedUser(username:"${USER}"){profile{ranking} submitStatsGlobal{acSubmissionNum{difficulty count submissions} totalSubmissionNum{difficulty count submissions}} userCalendar{totalActiveDays streak submissionCalendar} badges{displayName icon creationDate}}}`,
+      query: `{allQuestionsCount{difficulty count} userProfileUserQuestionProgressV2(userSlug:"${USER}"){totalQuestionBeatsPercentage} matchedUser(username:"${USER}"){profile{ranking} submitStatsGlobal{acSubmissionNum{difficulty count submissions} totalSubmissionNum{difficulty count submissions}} userCalendar{totalActiveDays streak submissionCalendar} badges{displayName icon creationDate}}}`,
     }),
   });
   if (!r.ok) throw new Error(`LeetCode ${r.status}`);
   const payload = (await r.json()) as {
     data?: {
       allQuestionsCount?: { difficulty: string; count: number }[];
+      userProfileUserQuestionProgressV2?: { totalQuestionBeatsPercentage?: number | null } | null;
       matchedUser?: {
         profile: { ranking: number };
         submitStatsGlobal: { acSubmissionNum: { difficulty: string; count: number }[] };
@@ -93,15 +95,18 @@ async function leetcode() {
   let acceptedSubmissions = 0;
   for (const s of u.submitStatsGlobal.acSubmissionNum) {
     solved[s.difficulty] = s.count;
-    acceptedSubmissions += s.submissions ?? 0;
+    if (s.difficulty === "All") acceptedSubmissions = s.submissions ?? 0;
   }
   let totalSubmissions = 0;
-  for (const s of u.submitStatsGlobal.totalSubmissionNum) totalSubmissions += s.submissions ?? 0;
+  for (const s of u.submitStatsGlobal.totalSubmissionNum) {
+    if (s.difficulty === "All") totalSubmissions = s.submissions ?? 0;
+  }
   return {
     ranking: u.profile.ranking,
     solved,
     questionCounts: Object.fromEntries(allQuestionsCount.map((item) => [item.difficulty, item.count])),
     acceptanceRate: getAcceptanceRate(acceptedSubmissions, totalSubmissions),
+    beatsPercentage: payload.data?.userProfileUserQuestionProgressV2?.totalQuestionBeatsPercentage ?? null,
     activeDays: u.userCalendar.totalActiveDays,
     streak: u.userCalendar.streak,
     submissions,
