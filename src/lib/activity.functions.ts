@@ -1,16 +1,20 @@
 import { createServerFn } from "@tanstack/react-start";
+import { getAcceptanceRate } from "@/lib/activity-utils";
 
 export type Day = { date: string; count: number; level: number };
+export type Achievement = { name: string; icon: string; date?: string };
 export type Activity = {
-  github: { total: number; days: Day[] } | null;
+  github: { total: number; days: Day[]; badges: Achievement[] } | null;
   leetcode: {
     ranking: number;
     solved: Record<string, number>;
     questionCounts: Record<string, number>;
+    acceptanceRate: number;
     activeDays: number;
     streak: number;
     submissions: number;
     days: Day[];
+    badges: Achievement[];
   } | null;
 };
 
@@ -21,10 +25,25 @@ function level(c: number) {
 }
 
 async function github() {
-  const r = await fetch(`https://github-contributions-api.jogruber.de/v4/${USER}?y=last`);
-  if (!r.ok) throw new Error(`GitHub ${r.status}`);
-  const j = (await r.json()) as { total: { lastYear: number }; contributions: Day[] };
-  return { total: j.total.lastYear, days: j.contributions };
+  const [activityResponse, profileResponse] = await Promise.all([
+    fetch(`https://github-contributions-api.jogruber.de/v4/${USER}?y=last`),
+    fetch(`https://github.com/${USER}`, { headers: { "User-Agent": "Mozilla/5.0 (compatible; ViditPortfolio/1.0)" } }),
+  ]);
+  if (!activityResponse.ok) throw new Error(`GitHub activity ${activityResponse.status}`);
+  const activity = (await activityResponse.json()) as { total: { lastYear: number }; contributions: Day[] };
+  const badges: Achievement[] = [];
+  if (profileResponse.ok) {
+    const html = await profileResponse.text();
+    const badgePattern = /<img\b[^>]*?alt="Achievement: ([^"]+)"[^>]*?src="([^"]+)"/g;
+    for (const match of html.matchAll(badgePattern)) {
+      const name = match[1];
+      const icon = match[2];
+      if (name && icon && !badges.some((badge) => badge.name === name)) {
+        badges.push({ name, icon: icon.startsWith("http") ? icon : `https://github.com${icon}` });
+      }
+    }
+  }
+  return { total: activity.total.lastYear, days: activity.contributions, badges };
 }
 
 async function leetcode() {
@@ -36,7 +55,7 @@ async function leetcode() {
       "User-Agent": "Mozilla/5.0 (compatible; ViditPortfolio/1.0)",
     },
     body: JSON.stringify({
-      query: `{allQuestionsCount{difficulty count} matchedUser(username:"${USER}"){profile{ranking} submitStatsGlobal{acSubmissionNum{difficulty count}} userCalendar{totalActiveDays streak submissionCalendar}}}`,
+      query: `{allQuestionsCount{difficulty count} matchedUser(username:"${USER}"){profile{ranking} submitStatsGlobal{acSubmissionNum{difficulty count submissions} totalSubmissionNum{difficulty count submissions}} userCalendar{totalActiveDays streak submissionCalendar} badges{displayName icon creationDate}}}`,
     }),
   });
   if (!r.ok) throw new Error(`LeetCode ${r.status}`);
@@ -47,6 +66,7 @@ async function leetcode() {
         profile: { ranking: number };
         submitStatsGlobal: { acSubmissionNum: { difficulty: string; count: number }[] };
         userCalendar: { totalActiveDays: number; streak: number; submissionCalendar: string };
+          badges: { displayName: string; icon: string; creationDate?: string }[];
       } | null;
     };
     errors?: { message: string }[];
@@ -70,15 +90,27 @@ async function leetcode() {
     days.push({ date: k, count: c, level: level(c) });
   }
   const solved: Record<string, number> = {};
-  for (const s of u.submitStatsGlobal.acSubmissionNum) solved[s.difficulty] = s.count;
+  let acceptedSubmissions = 0;
+  for (const s of u.submitStatsGlobal.acSubmissionNum) {
+    solved[s.difficulty] = s.count;
+    acceptedSubmissions += s.submissions ?? 0;
+  }
+  let totalSubmissions = 0;
+  for (const s of u.submitStatsGlobal.totalSubmissionNum) totalSubmissions += s.submissions ?? 0;
   return {
     ranking: u.profile.ranking,
     solved,
     questionCounts: Object.fromEntries(allQuestionsCount.map((item) => [item.difficulty, item.count])),
+    acceptanceRate: getAcceptanceRate(acceptedSubmissions, totalSubmissions),
     activeDays: u.userCalendar.totalActiveDays,
     streak: u.userCalendar.streak,
     submissions,
     days,
+    badges: u.badges.map((badge) => ({
+      name: badge.displayName,
+      icon: badge.icon.startsWith("http") ? badge.icon : `https://leetcode.com${badge.icon}`,
+      date: badge.creationDate,
+    })),
   };
 }
 
